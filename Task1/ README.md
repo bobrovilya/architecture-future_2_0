@@ -19,7 +19,10 @@ System_Boundary(c1, "Система Будущее 2.0") {
     Container(internal, "Внутренние сервисы", "Java")
     
     Container(gateway, "API Gateway", "Kong", "Единая точка входа") #FF5722
-    Container(bus, "Интеграционная шина", "Kafka")
+    Container(kafka, "Агрегатор событий", "Kafka")
+    Container(transformer, "Сервис трансформации", "Golang/Java")
+    Container(validator, "Сервис валидации и ФЛК", "Golang/Java")
+    Container(dlq, "DLQ", "")
     Container(ui, "Клиентский интерфейс", "React", "Для операторов")
 }
 
@@ -33,13 +36,16 @@ Rel(bi, gateway, "Запросы для отчетов", "HTTPS")
 Rel(ui, gateway, "Операции операторов", "WebSockets")
 
 Rel(ai, datalake, "Чтение мед.данных", "Apache Arrow")
-Rel(fintech, bus, "События платежей", "Avro")
-Rel(bus, dwh, "Синхронизация", "Kafka Connect")
+Rel(fintech, kafka, "События платежей", "Avro")
+Rel(kafka, transformer, "В нужный формат", "")
+Rel(transformer, validator, "Валидация/соответствие схеме", "")
+Rel(validator, dwh, "Синхронизация", "")
+Rel(validator, dlq, "Ошибки валидации", "")
 Rel_L(legacy_dwh, dwh, "Миграция данных", "Batch") #red
 @enduml
 ```
 
-см. файл Task1/c4.png
+см. файл Task1/c4_new.png
 
 # Проблемные места
 
@@ -59,7 +65,7 @@ Rel_L(legacy_dwh, dwh, "Миграция данных", "Batch") #red
 
 - Текущая шина (Apache Camel) не справляется с нагрузкой.
 
-**Решение:** Переход на Kafka или облачную шину.
+**Решение:** Переход на Kafka + 1 или несколько микросервисов для трансформации/валидации данных.
 
 ## Should Have (важные, но не критические):
 
